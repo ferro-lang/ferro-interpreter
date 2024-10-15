@@ -9,6 +9,7 @@ defmodule Interpreter do
           | {:bool_value, boolean()}
 
   # Main Interpreter logic.
+  def eval(program), do: eval(program, make_global_scope())
   def eval({:program, []}, _), do: {:nil_value, nil}
   def eval(program, scope), do: eval(program, [], scope)
 
