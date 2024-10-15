@@ -6,10 +6,14 @@ defmodule Lexer do
   # Defining the token types.
   @type token ::
           :eof
+          | :let
           | :lparen
           | :rparen
+          | :assignment
           | {:integer, integer()}
           | {:float, float()}
+          | {:identifier, String.t()}
+          | {:string, String.t()}
           | {:operation, operator()}
 
   # Converting character to operator atom.
@@ -34,6 +38,79 @@ defmodule Lexer do
       {:integer, String.to_integer(string_version)}
     end
   end
+
+  defp get_identifier_atom(identifier) do
+    case identifier do
+      "let" -> :let
+      _ -> {:identifier, identifier}
+    end
+  end
+
+  defguardp is_valid_identifier_character(char)
+            when char in [
+                   "a",
+                   "b",
+                   "c",
+                   "d",
+                   "e",
+                   "f",
+                   "g",
+                   "h",
+                   "i",
+                   "j",
+                   "k",
+                   "l",
+                   "m",
+                   "n",
+                   "o",
+                   "p",
+                   "q",
+                   "r",
+                   "s",
+                   "t",
+                   "u",
+                   "v",
+                   "w",
+                   "x",
+                   "y",
+                   "z",
+                   "A",
+                   "B",
+                   "C",
+                   "D",
+                   "E",
+                   "F",
+                   "G",
+                   "H",
+                   "I",
+                   "J",
+                   "K",
+                   "L",
+                   "M",
+                   "N",
+                   "O",
+                   "P",
+                   "Q",
+                   "R",
+                   "S",
+                   "T",
+                   "U",
+                   "V",
+                   "W",
+                   "X",
+                   "Y",
+                   "Z",
+                   "0",
+                   "1",
+                   "2",
+                   "3",
+                   "4",
+                   "5",
+                   "6",
+                   "7",
+                   "8",
+                   "9"
+                 ]
 
   # Main Lexer logic.
   def lexer(source) do
@@ -71,6 +148,11 @@ defmodule Lexer do
       _ when char in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"] ->
         extract_number([], [char | tail], tokens)
 
+      # Handing Identifiers
+      _
+      when is_valid_identifier_character(char) ->
+        extract_identifier([char], tail, tokens)
+
       # Skipping whitespace
       _ when char in [" ", "\n", "\r", "\t"] ->
         helper(tail, tokens)
@@ -103,6 +185,19 @@ defmodule Lexer do
 
       _ ->
         helper([char | tail], [get_number_atom(Enum.reverse(acc)) | tokens])
+    end
+  end
+
+  defp extract_identifier(acc, [], tokens),
+    do: helper([], [get_identifier_atom(Enum.reverse(acc) |> Enum.join("")) | tokens])
+
+  defp extract_identifier(acc, [char | tail], tokens) do
+    case char do
+      _ when is_valid_identifier_character(char) ->
+        extract_identifier([char | acc], tail, tokens)
+
+      _ ->
+        helper([char | tail], [get_identifier_atom(Enum.reverse(acc) |> Enum.join("")) | tokens])
     end
   end
 end

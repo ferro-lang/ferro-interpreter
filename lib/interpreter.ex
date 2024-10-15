@@ -7,10 +7,6 @@ defmodule Interpreter do
           | {:float_value, float()}
           | {:nil_value, nil}
 
-  defimpl String.Chars, for: Tuple do
-    def to_string({:operation, op}), do: "#{op}"
-  end
-
   # Main Interpreter logic.
   def eval({:program, []}), do: {:nil_value, nil}
   def eval(program), do: eval(program, [])
