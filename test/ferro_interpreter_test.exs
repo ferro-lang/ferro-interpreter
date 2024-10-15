@@ -99,5 +99,6 @@ defmodule FerroInterpreterTest do
 
     assert FerroInterpreter.main("25 - (25 + 25)") == {:integer_value, -25}
     assert FerroInterpreter.main("25 - (25 + 25 / 5 * 10)") == {:float_value, -50}
+    assert FerroInterpreter.main("625 / 5 / 5") == {:float_value, 25.0}
   end
 end

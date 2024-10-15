@@ -58,7 +58,7 @@ defmodule Parser do
   end
 
   defp parse_multiplicative_expression(tokens) do
-    {lhs, tail} = parse_division_expression(tokens)
+    {lhs, tail} = parse_division_expression(tokens, [])
 
     case tail do
       [{:operation, :multiply} | tail_] ->
@@ -70,21 +70,26 @@ defmodule Parser do
     end
   end
 
-  defp parse_division_expression(tokens) do
-    {lhs, tail} = parse_primary_expression(tokens)
+  defp parse_division_expression(tokens, acc) do
+    {expr, tail} = parse_primary_expression(tokens)
 
     case tail do
       [{:operation, :divide} | tail_] ->
-        {rhs, tail__} = parse_division_expression(tail_)
-        {{:binary_operation, {:operation, :divide}, lhs, rhs}, tail__}
-
-      [{:operation, :modulus} | tail_] ->
-        {rhs, tail__} = parse_statement(tail_)
-        {{:binary_operation, {:operation, :modulus}, lhs, rhs}, tail__}
+        parse_division_expression(tail_, [expr | acc])
 
       _ ->
-        {lhs, tail}
+        {align_division_expressions_into_order([expr | acc]), tail}
     end
+  end
+
+  defp align_division_expressions_into_order([head]), do: head
+
+  defp align_division_expressions_into_order([head, tail]) do
+    {:binary_operation, {:operation, :divide}, tail, head}
+  end
+
+  defp align_division_expressions_into_order([head | tail]) do
+    {:binary_operation, {:operation, :divide}, align_division_expressions_into_order(tail), head}
   end
 
   defp parse_primary_expression(tokens) do
