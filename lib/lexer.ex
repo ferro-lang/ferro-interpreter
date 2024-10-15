@@ -122,6 +122,9 @@ defmodule Lexer do
 
   defp helper([char | tail], tokens) do
     case char do
+      "=" ->
+        helper(tail, [:assignment | tokens])
+
       "(" ->
         helper(tail, [:lparen | tokens])
 

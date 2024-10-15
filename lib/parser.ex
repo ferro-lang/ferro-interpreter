@@ -10,7 +10,9 @@ defmodule Parser do
   @type expression ::
           {:integer_literal, integer()}
           | {:float_literal, float()}
+          | {:identifier_literal, String.t()}
           | {:binary_operation, operation(), expression(), expression()}
+          | {:assignment_operation, String.t(), expression()}
 
   @type program ::
           {:program, list(expression())}
@@ -27,6 +29,10 @@ defmodule Parser do
 
       [:eof] ->
         {:program, Enum.reverse(acc)}
+
+      [:let, {:identifier, name}, :assignment | tail_] ->
+        {expression, tail__} = parse_statement(tail_)
+        parse(tail__, [{:assignment_operation, name, expression} | acc])
 
       _ ->
         {expression, tail} = parse_statement(tokens)
@@ -79,6 +85,9 @@ defmodule Parser do
 
       [{:float, f} | tail] ->
         {{:float_literal, f}, tail}
+
+      [{:identifier, n} | tail] ->
+        {{:identifier_literal, n}, tail}
 
       [:lparen | tail] ->
         {expression, tail_} = parse_statement(tail)
