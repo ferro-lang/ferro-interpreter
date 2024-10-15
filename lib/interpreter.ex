@@ -7,6 +7,7 @@ defmodule Interpreter do
           | {:float_value, float()}
           | {:nil_value, nil}
           | {:bool_value, boolean()}
+          | {:function, list(String.t()), list(), %{}}
 
   # Main Interpreter logic.
   def eval(program), do: eval(program, make_global_scope())
@@ -51,6 +52,10 @@ defmodule Interpreter do
       {:assignment_operation, name, aexpr} ->
         {val, _} = eval_expr(aexpr, scope)
         new_scope = Map.put(scope, name, val)
+        {{:nil_value, nil}, new_scope}
+
+      {:function_declaration, name, arguments, {:block, block}} ->
+        new_scope = Map.put(scope, name, {:function, arguments, block})
         {{:nil_value, nil}, new_scope}
 
       _ ->
