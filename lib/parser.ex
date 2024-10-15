@@ -52,14 +52,44 @@ defmodule Parser do
   end
 
   defp parse_additive_expression(tokens) do
-    parse_primary_expression(tokens)
+    {lhs, tail} = parse_primary_expression(tokens)
+
+    case tail do
+      [{:operation, :multiply} | tail_] ->
+        {rhs, tail__} = parse_primary_expression(tail_)
+        {{:binary_operation, {:operation, :multiply}, lhs, rhs}, tail__}
+
+      [{:operation, :divide} | tail_] ->
+        {rhs, tail__} = parse_primary_expression(tail_)
+        {{:binary_operation, {:operation, :divide}, lhs, rhs}, tail__}
+
+      [{:operation, :modulus} | tail_] ->
+        {rhs, tail__} = parse_primary_expression(tail_)
+        {{:binary_operation, {:operation, :modulus}, lhs, rhs}, tail__}
+
+      _ ->
+        {lhs, tail}
+    end
   end
 
   defp parse_primary_expression(tokens) do
     case tokens do
-      [{:integer, i} | tail] -> {{:integer_literal, i}, tail}
-      [{:float, f} | tail] -> {{:float_literal, f}, tail}
-      _ -> raise "Lexer error: Encountered invalid token!"
+      [{:integer, i} | tail] ->
+        {{:integer_literal, i}, tail}
+
+      [{:float, f} | tail] ->
+        {{:float_literal, f}, tail}
+
+      [:lparen | tail] ->
+        {expression, tail_} = parse_statement(tail)
+
+        case tail_ do
+          [:rparen | tail__] -> {expression, tail__}
+          [token | _] -> raise "Lexer error: Expected closing parenthesis, got #{token}"
+        end
+
+      [token | _] ->
+        raise "Lexer error: Encountered invalid token, got #{token}!"
     end
   end
 end

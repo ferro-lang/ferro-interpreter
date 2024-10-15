@@ -6,6 +6,8 @@ defmodule Lexer do
   # Defining the token types.
   @type token ::
           :eof
+          | :lparen
+          | :rparen
           | {:integer, integer()}
           | {:float, float()}
           | {:operation, operator()}
@@ -43,6 +45,12 @@ defmodule Lexer do
 
   defp helper([char | tail], tokens) do
     case char do
+      "(" ->
+        helper(tail, [:lparen | tokens])
+
+      ")" ->
+        helper(tail, [:rparen | tokens])
+
       "+" ->
         helper(tail, [{:operation, operator_from_character(?+)} | tokens])
 
