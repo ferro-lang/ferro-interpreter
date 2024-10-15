@@ -56,15 +56,15 @@ defmodule Parser do
 
     case tail do
       [{:operation, :multiply} | tail_] ->
-        {rhs, tail__} = parse_primary_expression(tail_)
+        {rhs, tail__} = parse_statement(tail_)
         {{:binary_operation, {:operation, :multiply}, lhs, rhs}, tail__}
 
       [{:operation, :divide} | tail_] ->
-        {rhs, tail__} = parse_primary_expression(tail_)
+        {rhs, tail__} = parse_statement(tail_)
         {{:binary_operation, {:operation, :divide}, lhs, rhs}, tail__}
 
       [{:operation, :modulus} | tail_] ->
-        {rhs, tail__} = parse_primary_expression(tail_)
+        {rhs, tail__} = parse_statement(tail_)
         {{:binary_operation, {:operation, :modulus}, lhs, rhs}, tail__}
 
       _ ->
@@ -85,11 +85,11 @@ defmodule Parser do
 
         case tail_ do
           [:rparen | tail__] -> {expression, tail__}
-          [token | _] -> raise "Lexer error: Expected closing parenthesis, got #{token}"
+          [token | _] -> raise "Parser error: Expected closing parenthesis, got #{token}"
         end
 
       [token | _] ->
-        raise "Lexer error: Encountered invalid token, got #{token}!"
+        raise "Parser error: Encountered invalid token, got #{token}!"
     end
   end
 end
