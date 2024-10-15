@@ -7,8 +7,12 @@ defmodule Lexer do
   @type token ::
           :eof
           | :let
+          | :fn
           | :lparen
           | :rparen
+          | :lbrace
+          | :rbrace
+          | :comma
           | :assignment
           | {:integer, integer()}
           | {:float, float()}
@@ -41,6 +45,7 @@ defmodule Lexer do
 
   defp get_identifier_atom(identifier) do
     case identifier do
+      "fn" -> :fn
       "let" -> :let
       _ -> {:identifier, identifier}
     end
@@ -124,6 +129,15 @@ defmodule Lexer do
     case char do
       "=" ->
         helper(tail, [:assignment | tokens])
+
+      "," ->
+        helper(tail, [:comma | tokens])
+
+      "{" ->
+        helper(tail, [:lbrace | tokens])
+
+      "}" ->
+        helper(tail, [:rbrace | tokens])
 
       "(" ->
         helper(tail, [:lparen | tokens])

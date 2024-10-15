@@ -13,6 +13,8 @@ defmodule Parser do
           | {:identifier_literal, String.t()}
           | {:binary_operation, operation(), expression(), expression()}
           | {:assignment_operation, String.t(), expression()}
+          | {:block, list(expression())}
+          | {:function_declaration, String.t(), list(expression()), expression()}
 
   @type program ::
           {:program, list(expression())}
@@ -30,10 +32,6 @@ defmodule Parser do
       [:eof] ->
         {:program, Enum.reverse(acc)}
 
-      [:let, {:identifier, name}, :assignment | tail_] ->
-        {expression, tail__} = parse_statement(tail_)
-        parse(tail__, [{:assignment_operation, name, expression} | acc])
-
       _ ->
         {expression, tail} = parse_statement(tokens)
         parse(tail, [expression | acc])
@@ -41,15 +39,52 @@ defmodule Parser do
   end
 
   defp parse_statement(tokens) do
+    case tokens do
+      [:let, {:identifier, name}, :assignment | tail_] ->
+        {expression, tail__} = parse_expression(tail_)
+        {{:assignment_operation, name, expression}, tail__}
+
+      [:fn, {:identifier, name}, :lparen | tail_] ->
+        {arguments, tail__} = parse_arguments(tail_, [])
+        {block, tail___} = parse_block(tail__)
+        {{:function_declaration, name, arguments, block}, tail___}
+
+      _ ->
+        {expression, tail} = parse_expression(tokens)
+        {expression, tail}
+    end
+  end
+
+  defp parse_arguments([:rparen | tail], acc), do: {Enum.reverse(acc), tail}
+
+  defp parse_arguments([{:identifier, name}, :comma | tail], acc),
+    do: parse_arguments(tail, [{:identifier_literal, name} | acc])
+
+  defp parse_arguments([{:identifier, name} | tail], acc),
+    do: parse_arguments(tail, [{:identifier_literal, name} | acc])
+
+  defp parse_arguments(_, _),
+    do: raise("Parser error: Unexpected token found in function arguments!")
+
+  defp parse_block([:lbrace | tail]), do: parse_block(tail, [])
+
+  defp parse_block([:rbrace | tail], acc), do: {{:block, Enum.reverse(acc)}, tail}
+
+  defp parse_block(tokens, acc) do
+    {statement, tail} = parse_statement(tokens)
+    parse_block(tail, [statement | acc])
+  end
+
+  defp parse_expression(tokens) do
     {lhs, tail} = parse_multiplicative_expression(tokens)
 
     case tail do
       [{:operation, :plus} | tail_] ->
-        {rhs, tail__} = parse_statement(tail_)
+        {rhs, tail__} = parse_expression(tail_)
         {{:binary_operation, {:operation, :addition}, lhs, rhs}, tail__}
 
       [{:operation, :minus} | tail_] ->
-        {rhs, tail__} = parse_statement(tail_)
+        {rhs, tail__} = parse_expression(tail_)
         {{:binary_operation, {:operation, :reduction}, lhs, rhs}, tail__}
 
       _ ->
@@ -62,7 +97,7 @@ defmodule Parser do
 
     case tail do
       [{:operation, :multiply} | tail_] ->
-        {rhs, tail__} = parse_statement(tail_)
+        {rhs, tail__} = parse_expression(tail_)
         {{:binary_operation, {:operation, :multiply}, lhs, rhs}, tail__}
 
       _ ->
@@ -104,7 +139,7 @@ defmodule Parser do
         {{:identifier_literal, n}, tail}
 
       [:lparen | tail] ->
-        {expression, tail_} = parse_statement(tail)
+        {expression, tail_} = parse_expression(tail)
 
         case tail_ do
           [:rparen | tail__] -> {expression, tail__}
