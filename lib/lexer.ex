@@ -125,6 +125,13 @@ defmodule Lexer do
     helper(String.graphemes(source), [])
   end
 
+  def skip_comment([char | tail]) do
+    case char do
+      "\n" -> tail
+      _ -> skip_comment(tail)
+    end
+  end
+
   # Helper function to tokenize the source.
   defp helper([], tokens), do: Enum.reverse([:eof | tokens])
 
@@ -154,15 +161,23 @@ defmodule Lexer do
       "*" ->
         helper(tail, [{:operation, operator_from_character(?*)} | tokens])
 
-      "/" ->
-        helper(tail, [{:operation, operator_from_character(?/)} | tokens])
-
       "%" ->
         helper(tail, [{:operation, operator_from_character(?%)} | tokens])
 
       # Handing the minus case seperately, as (-ve) numbers also start with '-'
       "-" ->
         extract_minus_or_number(tail, tokens)
+
+      # Skip comments
+      "/" ->
+        case tail do
+          ["/" | tail_] ->
+            tail__ = skip_comment(tail_)
+            helper(tail__, tokens)
+
+          _ ->
+            helper(tail, [{:operation, operator_from_character(?/)} | tokens])
+        end
 
       # Handing positive numbers
       _ when char in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"] ->
