@@ -189,9 +189,17 @@ defmodule Interpreter do
 
                 # Dynamically call the Elixir function
                 function_atom = String.to_atom(elixir_function)
-                apply(Module.concat(Elixir, module_name), function_atom, evaluated_params)
 
-                {{:nil_value, nil}, scope}
+                return_value =
+                  apply(Module.concat(Elixir, module_name), function_atom, evaluated_params)
+
+                case return_value do
+                  :ok ->
+                    {{:nil_value, nil}, scope}
+
+                  _ ->
+                    {make_value(return_value), scope}
+                end
               end
           end
         else
@@ -223,6 +231,12 @@ defmodule Interpreter do
   defp extract_value({:nil_value, _}), do: nil
   defp extract_value({:bool_value, b}), do: b
   defp extract_value({:string_value, s}), do: s
+
+  defp make_value(i) when is_integer(i), do: {:integer_value, i}
+  defp make_value(f) when is_float(f), do: {:float_value, f}
+  defp make_value(nil), do: {:nil_value, nil}
+  defp make_value(b) when is_boolean(b), do: {:bool_value, b}
+  defp make_value(s) when is_binary(s), do: {:string_value, s}
 
   defp eval_block([], parent_scope, _, []), do: {{:nil_value, nil}, parent_scope}
   defp eval_block([], parent_scope, _, [val | _]), do: {val, parent_scope}

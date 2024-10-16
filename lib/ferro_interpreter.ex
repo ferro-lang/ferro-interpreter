@@ -9,8 +9,13 @@ defmodule FerroInterpreter do
   end
 
   def file(filename) do
-    {:ok, content} = File.read("source/#{filename}.fr")
-    Scope.make_global_scope() |> eval(content)
+    {seconds, _} =
+      :timer.tc(fn ->
+        {:ok, content} = File.read("source/#{filename}.fr")
+        Scope.make_global_scope() |> eval(content)
+      end)
+
+    IO.puts("Time: #{seconds / 1_000_000}")
   end
 
   defp eval(scope, content) do

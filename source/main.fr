@@ -1,6 +1,7 @@
 open io
+open math
 
 fn main() {
-  let msg = "Hello, world!"
-  println(msg)
+  let k = sqrt(64)
+  println(k)
 }
