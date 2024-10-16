@@ -1,5 +1,5 @@
 fn offset(x) {
-  return fn make(y) {
+  return fn _(y) {
     return x + y
   }
 }

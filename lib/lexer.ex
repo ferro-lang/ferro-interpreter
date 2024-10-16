@@ -55,6 +55,7 @@ defmodule Lexer do
 
   defguardp is_valid_identifier_character(char)
             when char in [
+                   "_",
                    "a",
                    "b",
                    "c",
