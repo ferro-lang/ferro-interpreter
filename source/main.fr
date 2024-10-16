@@ -1,5 +1,8 @@
+
 fn add(x, z) {
   return x + z
 }
 
-add(10, 0)
+fn main() {
+  add(1, 2)
+}
