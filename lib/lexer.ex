@@ -7,6 +7,7 @@ defmodule Lexer do
   @type token ::
           :eof
           | :let
+          | :open
           | :fn
           | :lparen
           | :rparen
@@ -48,6 +49,7 @@ defmodule Lexer do
     case identifier do
       "fn" -> :fn
       "let" -> :let
+      "open" -> :open
       "return" -> :return
       _ -> {:identifier, identifier}
     end
@@ -168,6 +170,9 @@ defmodule Lexer do
       "-" ->
         extract_minus_or_number(tail, tokens)
 
+      "\"" ->
+        extract_string(tail, tokens)
+
       # Skip comments
       "/" ->
         case tail do
@@ -194,6 +199,24 @@ defmodule Lexer do
 
       _ ->
         raise "Lexer error: Encountered Unexpected character, got #{char}"
+    end
+  end
+
+  defp extract_string(source, tokens) do
+    extract_string(source, [], tokens)
+  end
+
+  defp extract_string([], _, _) do
+    raise "Lexer error: Unterminated string."
+  end
+
+  defp extract_string([char | tail], acc, tokens) do
+    case char do
+      "\"" ->
+        helper(tail, [{:string, Enum.reverse(acc) |> Enum.join("")} | tokens])
+
+      char ->
+        extract_string(tail, [char | acc], tokens)
     end
   end
 

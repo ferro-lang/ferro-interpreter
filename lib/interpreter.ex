@@ -9,6 +9,7 @@ defmodule Interpreter do
           | {:bool_value, boolean()}
           | {:function, list(String.t()), list(), %{}}
           | {:return_value, runtime_value()}
+          | {:string_value, String.t()}
 
   # Main Interpreter logic.
   def eval(program), do: eval(program, Scope.make_global_scope())
@@ -59,6 +60,28 @@ defmodule Interpreter do
 
   defp eval_expr(expression, scope, scope_type) do
     case expression do
+      {:open_operation, filename} when scope_type == :global ->
+        # Defining the path for the standard library
+        std_lib_path = "std/#{filename}.fr"
+
+        # Check whether the file exists
+        if File.exists?(std_lib_path) do
+          case File.read(std_lib_path) do
+            {:ok, content} ->
+              case Parser.parse(Lexer.lexer(content)) do
+                {:program, imported_expressions} ->
+                  {_, imported_scope} = eval_expr_batch(imported_expressions, [], scope, :global)
+                  new_scope = Map.merge(scope, imported_scope)
+                  {{:nil_value, nil}, new_scope}
+              end
+
+            {:error, reason} ->
+              raise "Interpreter internal error: #{reason}"
+          end
+        else
+          raise "RuntimeError: Module(#{filename} not found)"
+        end
+
       {:function_declaration, name, arguments, {:block, block}} ->
         new_scope = Map.put(scope, name, {:function, arguments, block, scope})
         {Map.get(new_scope, name), new_scope}
@@ -81,6 +104,9 @@ defmodule Interpreter do
 
       {:float_literal, i} ->
         {{:float_value, i}, scope}
+
+      {:string_literal, t} ->
+        {{:string_value, t}, scope}
 
       {:binary_operation, {:operation, op}, lhs, rhs} ->
         eval_binary_operation(op, lhs, rhs, scope)

@@ -11,6 +11,7 @@ defmodule Parser do
           {:integer_literal, integer()}
           | {:float_literal, float()}
           | {:identifier_literal, String.t()}
+          | {:string_literal, String.t()}
           | {:binary_operation, operation(), expression(), expression()}
           | {:assignment_operation, String.t(), expression()}
           | {:block, list(expression())}
@@ -42,6 +43,9 @@ defmodule Parser do
 
   defp parse_statement(tokens) do
     case tokens do
+      [:open, {:identifier, name} | tail] ->
+        {{:open_operation, name}, tail}
+
       [{:identifier, name}, :lparen | tail] ->
         {parameters, tail_} = parse_parameters(tail, [])
         {{:function_call_operation, name, parameters}, tail_}
@@ -167,6 +171,9 @@ defmodule Parser do
 
       [{:identifier, n} | tail] ->
         {{:identifier_literal, n}, tail}
+
+      [{:string, t} | tail] ->
+        {{:string_literal, t}, tail}
 
       [:lparen | tail] ->
         {expression, tail_} = parse_expression(tail)
