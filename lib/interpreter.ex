@@ -32,7 +32,8 @@ defmodule Interpreter do
     {runtime_value, new_scope} = eval_expr(expression, scope)
 
     case runtime_value do
-      {:return_value, _} -> {runtime_value, new_scope}  # Propagate return immediately
+      # Propagate return immediately
+      {:return_value, _} -> {runtime_value, new_scope}
       _ -> eval_expr_batch(tail, [runtime_value | acc], new_scope)
     end
   end
@@ -66,25 +67,32 @@ defmodule Interpreter do
 
       {:return_operation, expression} ->
         {val, new_scope} = eval_expr(expression, scope)
-        {{:return_value, val}, new_scope}  # Mark return value
+        # Mark return value
+        {{:return_value, val}, new_scope}
 
       {:function_call_operation, name, parameters} ->
         if Map.has_key?(scope, name) do
           {:function, arguments, block, fn_scope} = Map.get(scope, name)
 
-          evaluated_params =
-            Enum.map(parameters, fn param ->
-              {val, _} = eval_expr(param, scope)
-              val
-            end)
+          if Enum.count(arguments) != Enum.count(parameters) do
+            raise "Interpreter Error: Function(#{name}), called with different number of arguments!"
+          else
+            evaluated_params =
+              Enum.map(parameters, fn param ->
+                {val, _} = eval_expr(param, scope)
+                val
+              end)
 
-          variables = Enum.zip(arguments, evaluated_params)
-          fn_scope = Enum.into(variables, make_local_scope(fn_scope))
-          {val, new_scope} = eval_block(block, scope, fn_scope, [])
+            variables = Enum.zip(arguments, evaluated_params)
+            fn_scope = Enum.into(variables, make_local_scope(fn_scope))
+            {val, new_scope} = eval_block(block, scope, fn_scope, [])
 
-          case val do
-            {:return_value, inner_val} -> {inner_val, new_scope}  # Return actual value
-            _ -> {{:nil_value, nil}, new_scope}  # Return nil if no explicit return
+            case val do
+              # Return actual value
+              {:return_value, inner_val} -> {inner_val, new_scope}
+              # Return nil if no explicit return
+              _ -> {{:nil_value, nil}, new_scope}
+            end
           end
         else
           raise "RuntimeError: Function #{name} isn't defined!"
@@ -102,7 +110,8 @@ defmodule Interpreter do
     normalized_scope = Scope.normalize(parent_scope, new_scope)
 
     case val do
-      {:return_value, _} -> {val, normalized_scope}  # Propagate return value immediately
+      # Propagate return value immediately
+      {:return_value, _} -> {val, normalized_scope}
       _ -> eval_block(tail, normalized_scope, new_scope, [val | runtime_values])
     end
   end
