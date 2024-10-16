@@ -182,7 +182,15 @@ defmodule Parser do
         {{:float_literal, f}, tail}
 
       [{:identifier, n} | tail] ->
-        {{:identifier_literal, n}, tail}
+        case tail do
+          # Check if the next token is an opening parenthesis
+          :lparen ->
+            {parameters, tail_} = parse_parameters(tail, [])
+            {{:function_call_operation, n, parameters}, tail_}
+
+          _ ->
+            {{:identifier_literal, n}, tail}
+        end
 
       [{:string, t} | tail] ->
         {{:string_literal, t}, tail}
