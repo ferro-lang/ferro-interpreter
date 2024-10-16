@@ -8,6 +8,7 @@ defmodule Interpreter do
           | {:nil_value, nil}
           | {:bool_value, boolean()}
           | {:function, list(String.t()), list(), %{}}
+          | {:external_function, String.t(), String.t(), list(String.t()), %{}}
           | {:return_value, runtime_value()}
           | {:string_value, String.t()}
 
@@ -31,8 +32,8 @@ defmodule Interpreter do
         if Map.has_key?(returned_scope, "main") do
           case Map.get(returned_scope, "main") do
             {:function, [], block, fn_scope} ->
-              {val, _} = eval_block(block, scope, fn_scope, [])
-              val
+              {_, _} = eval_block(block, scope, fn_scope, [])
+              nil
 
             _ ->
               raise "RuntimeError: 'main' must be a function, but is not!"
@@ -62,7 +63,7 @@ defmodule Interpreter do
     case expression do
       {:open_operation, filename} when scope_type == :global ->
         # Defining the path for the standard library
-        std_lib_path = "std/#{filename}.fr"
+        std_lib_path = "std/ferro/#{filename}.fr"
 
         # Check whether the file exists
         if File.exists?(std_lib_path) do
@@ -85,6 +86,18 @@ defmodule Interpreter do
       {:function_declaration, name, arguments, {:block, block}} ->
         new_scope = Map.put(scope, name, {:function, arguments, block, scope})
         {Map.get(new_scope, name), new_scope}
+
+      {:external_function_declaration, elixir_file, elixir_function, function_declaration}
+      when scope_type == :global ->
+        {_, fname, _, _} = function_declaration
+        {fdef, _} = eval_expr(function_declaration, scope, scope_type)
+
+        case fdef do
+          {:function, arguments, _, fn_scope} ->
+            efdef = {:external_function, elixir_file, elixir_function, arguments, fn_scope}
+            new_scope = Map.put(scope, fname, efdef)
+            {Map.get(new_scope, fname), new_scope}
+        end
 
       # Restrict binary operations and assignments to local scopes only
       {:binary_operation, {:operation, _op}, _lhs, _rhs} when scope_type == :global ->
@@ -125,27 +138,61 @@ defmodule Interpreter do
 
       {:function_call_operation, name, parameters} ->
         if Map.has_key?(scope, name) do
-          {:function, arguments, block, fn_scope} = Map.get(scope, name)
+          case Map.get(scope, name) do
+            {:function, arguments, block, fn_scope} ->
+              if Enum.count(arguments) != Enum.count(parameters) do
+                raise "Interpreter Error: Function(#{name}), called with different number of arguments!"
+              else
+                evaluated_params =
+                  Enum.map(parameters, fn param ->
+                    {val, _} = eval_expr(param, scope, scope_type)
+                    val
+                  end)
 
-          if Enum.count(arguments) != Enum.count(parameters) do
-            raise "Interpreter Error: Function(#{name}), called with different number of arguments!"
-          else
-            evaluated_params =
-              Enum.map(parameters, fn param ->
-                {val, _} = eval_expr(param, scope, scope_type)
-                val
-              end)
+                variables = Enum.zip(arguments, evaluated_params)
+                fn_scope = Enum.into(variables, make_local_scope(fn_scope))
+                {val, new_scope} = eval_block(block, scope, fn_scope, [])
 
-            variables = Enum.zip(arguments, evaluated_params)
-            fn_scope = Enum.into(variables, make_local_scope(fn_scope))
-            {val, new_scope} = eval_block(block, scope, fn_scope, [])
+                case val do
+                  # Return actual value
+                  {:return_value, inner_val} -> {inner_val, new_scope}
+                  # Return nil if no explicit return
+                  _ -> {{:nil_value, nil}, new_scope}
+                end
+              end
 
-            case val do
-              # Return actual value
-              {:return_value, inner_val} -> {inner_val, new_scope}
-              # Return nil if no explicit return
-              _ -> {{:nil_value, nil}, new_scope}
-            end
+            {:external_function, elixir_file, elixir_function, arguments, _} ->
+              if Enum.count(arguments) != Enum.count(parameters) do
+                raise "Interpreter Error: Function(#{name}), called with different number of arguments!"
+              else
+                elixir_file_path = "std/ex/#{elixir_file}"
+                module_name = get_module_name(elixir_file_path)
+
+                if Code.ensure_loaded?(module_name) do
+                  module_name
+                else
+                  case File.read(elixir_file_path) do
+                    {:ok, content} ->
+                      [{m, _}] = Code.compile_string(content)
+                      m
+
+                    {:error, reason} ->
+                      {:error, reason}
+                  end
+                end
+
+                evaluated_params =
+                  Enum.map(parameters, fn param ->
+                    {val, _} = eval_expr(param, scope, scope_type)
+                    extract_value(val)
+                  end)
+
+                # Dynamically call the Elixir function
+                function_atom = String.to_atom(elixir_function)
+                apply(Module.concat(Elixir, module_name), function_atom, evaluated_params)
+
+                {{:nil_value, nil}, scope}
+              end
           end
         else
           raise "RuntimeError: Function #{name} isn't defined!"
@@ -161,6 +208,21 @@ defmodule Interpreter do
         raise "Interpreter internal error: Cannot execute expression!"
     end
   end
+
+  defp get_module_name(file_path) do
+    # Assuming that your module name follows a pattern based on the file path,
+    # you can extract the module name here. For example:
+    # "std/ex/FerroIO.ex" -> FerroIO
+    file_path
+    |> Path.basename(".ex")
+    |> String.to_atom()
+  end
+
+  defp extract_value({:integer_value, i}), do: i
+  defp extract_value({:float_value, f}), do: f
+  defp extract_value({:nil_value, _}), do: nil
+  defp extract_value({:bool_value, b}), do: b
+  defp extract_value({:string_value, s}), do: s
 
   defp eval_block([], parent_scope, _, []), do: {{:nil_value, nil}, parent_scope}
   defp eval_block([], parent_scope, _, [val | _]), do: {val, parent_scope}

@@ -13,6 +13,7 @@ defmodule Lexer do
           | :rparen
           | :lbrace
           | :rbrace
+          | :external
           | :comma
           | :return
           | :assignment
@@ -51,6 +52,7 @@ defmodule Lexer do
       "let" -> :let
       "open" -> :open
       "return" -> :return
+      "external" -> :external
       _ -> {:identifier, identifier}
     end
   end

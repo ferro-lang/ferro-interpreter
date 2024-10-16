@@ -1,0 +1,2 @@
+external("FerroIO.ex", "println")
+fn println(arg) {} 

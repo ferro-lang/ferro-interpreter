@@ -1,5 +1,6 @@
 open io
 
 fn main() {
-  greet()
+  let msg = "Hello, world!"
+  println(msg)
 }

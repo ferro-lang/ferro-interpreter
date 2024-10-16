@@ -18,6 +18,7 @@ defmodule Parser do
           | {:function_declaration, String.t(), list(String.t()), expression()}
           | {:function_call_operation, String.t(), list(expression())}
           | {:return_operation, expression()}
+          | {:external_function_declaration, String.t(), String.t(), expression()}
 
   @type program ::
           {:program, list(expression())}
@@ -45,6 +46,17 @@ defmodule Parser do
     case tokens do
       [:open, {:identifier, name} | tail] ->
         {{:open_operation, name}, tail}
+
+      [
+        :external,
+        :lparen,
+        {:string, elixir_file},
+        :comma,
+        {:string, elixir_function},
+        :rparen | tail
+      ] ->
+        {external_function, tail_} = parse_statement(tail)
+        {{:external_function_declaration, elixir_file, elixir_function, external_function}, tail_}
 
       [{:identifier, name}, :lparen | tail] ->
         {parameters, tail_} = parse_parameters(tail, [])
