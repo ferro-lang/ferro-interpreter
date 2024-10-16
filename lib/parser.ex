@@ -14,7 +14,9 @@ defmodule Parser do
           | {:binary_operation, operation(), expression(), expression()}
           | {:assignment_operation, String.t(), expression()}
           | {:block, list(expression())}
-          | {:function_declaration, String.t(), list(expression()), expression()}
+          | {:function_declaration, String.t(), list(String.t()), expression()}
+          | {:function_call_operation, String.t(), list(expression())}
+          | {:return_operation, expression()}
 
   @type program ::
           {:program, list(expression())}
@@ -40,14 +42,22 @@ defmodule Parser do
 
   defp parse_statement(tokens) do
     case tokens do
+      [{:identifier, name}, :lparen | tail] ->
+        {parameters, tail_} = parse_parameters(tail, [])
+        {{:function_call_operation, name, parameters}, tail_}
+
       [:let, {:identifier, name}, :assignment | tail_] ->
-        {expression, tail__} = parse_expression(tail_)
-        {{:assignment_operation, name, expression}, tail__}
+        {statement, tail__} = parse_statement(tail_)
+        {{:assignment_operation, name, statement}, tail__}
 
       [:fn, {:identifier, name}, :lparen | tail_] ->
         {arguments, tail__} = parse_arguments(tail_, [])
         {block, tail___} = parse_block(tail__)
         {{:function_declaration, name, arguments, block}, tail___}
+
+      [:return | tail] ->
+        {statement, tail_} = parse_statement(tail)
+        {{:return_operation, statement}, tail_}
 
       _ ->
         {expression, tail} = parse_expression(tokens)
@@ -55,13 +65,33 @@ defmodule Parser do
     end
   end
 
+  # Parsing parameters.
+  defp parse_parameters([:rparen | tail], acc), do: {Enum.reverse(acc), tail}
+
+  defp parse_parameters(tokens, acc) do
+    {expression, tail_} = parse_expression(tokens)
+
+    case tail_ do
+      [:comma | tail__] ->
+        parse_parameters(tail__, [expression | acc])
+
+      [:rparen | tail__] ->
+        {Enum.reverse([expression | acc]), tail__}
+
+      _ ->
+        dbg(tail_)
+        raise "Parser: Error: Encountered Invalid Token, expected a comma!"
+    end
+  end
+
+  # Helper functions to parse, arguments for a function.
   defp parse_arguments([:rparen | tail], acc), do: {Enum.reverse(acc), tail}
 
   defp parse_arguments([{:identifier, name}, :comma | tail], acc),
-    do: parse_arguments(tail, [{:identifier_literal, name} | acc])
+    do: parse_arguments(tail, [name | acc])
 
   defp parse_arguments([{:identifier, name} | tail], acc),
-    do: parse_arguments(tail, [{:identifier_literal, name} | acc])
+    do: parse_arguments(tail, [name | acc])
 
   defp parse_arguments(_, _),
     do: raise("Parser error: Unexpected token found in function arguments!")

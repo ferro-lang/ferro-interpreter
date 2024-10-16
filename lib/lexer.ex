@@ -13,6 +13,7 @@ defmodule Lexer do
           | :lbrace
           | :rbrace
           | :comma
+          | :return
           | :assignment
           | {:integer, integer()}
           | {:float, float()}
@@ -47,6 +48,7 @@ defmodule Lexer do
     case identifier do
       "fn" -> :fn
       "let" -> :let
+      "return" -> :return
       _ -> {:identifier, identifier}
     end
   end

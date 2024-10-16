@@ -1,5 +1,8 @@
-fn add(x, y) {
-    x + y
+fn offset(x) {
+  return fn make(y) {
+    return x + y
+  }
 }
 
-add
+let adder = offset(5)
+adder(25.0)
