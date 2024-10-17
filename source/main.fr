@@ -2,6 +2,6 @@ open io
 open math
 
 fn main() {
-  let k = sqrt(64)
-  println(k)
+  println(sqrt(64))
 }
+

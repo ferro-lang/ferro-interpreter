@@ -58,10 +58,6 @@ defmodule Parser do
         {external_function, tail_} = parse_statement(tail)
         {{:external_function_declaration, elixir_file, elixir_function, external_function}, tail_}
 
-      [{:identifier, name}, :lparen | tail] ->
-        {parameters, tail_} = parse_parameters(tail, [])
-        {{:function_call_operation, name, parameters}, tail_}
-
       [:let, {:identifier, name}, :assignment | tail_] ->
         {statement, tail__} = parse_statement(tail_)
         {{:assignment_operation, name, statement}, tail__}
@@ -76,8 +72,30 @@ defmodule Parser do
         {{:return_operation, statement}, tail_}
 
       _ ->
-        {expression, tail} = parse_expression(tokens)
-        {expression, tail}
+        {expression, tail} = parse_passable_expression(tokens, nil)
+
+        case expression do
+          {nil, tail} ->
+            {expression, tail_} = parse_expression(tail)
+            {expression, tail_}
+
+          _ ->
+            {expression, tail}
+        end
+    end
+  end
+
+  defp parse_passable_expression(tokens, parsing_type) do
+    case tokens do
+      [{:identifier, name}, :lparen | tail] ->
+        {parameters, tail_} = parse_parameters(tail, [])
+        {{:function_call_operation, name, parameters}, tail_}
+
+      _ when parsing_type == :in_process ->
+        parse_expression(tokens)
+
+      _ ->
+        {nil, tokens}
     end
   end
 
@@ -85,7 +103,7 @@ defmodule Parser do
   defp parse_parameters([:rparen | tail], acc), do: {Enum.reverse(acc), tail}
 
   defp parse_parameters(tokens, acc) do
-    {expression, tail_} = parse_expression(tokens)
+    {expression, tail_} = parse_passable_expression(tokens, :in_process)
 
     case tail_ do
       [:comma | tail__] ->
@@ -105,6 +123,11 @@ defmodule Parser do
 
   defp parse_arguments([{:identifier, name}, :comma | tail], acc),
     do: parse_arguments(tail, [name | acc])
+
+  defp parse_arguments([{:identifier, name}, :lparen | tail], acc) do
+    {parameters, tail_} = parse_parameters(tail, [])
+    parse_arguments(tail_, [{:function_call_operation, name, parameters} | acc])
+  end
 
   defp parse_arguments([{:identifier, name} | tail], acc),
     do: parse_arguments(tail, [name | acc])
@@ -180,17 +203,6 @@ defmodule Parser do
 
       [{:float, f} | tail] ->
         {{:float_literal, f}, tail}
-
-      [{:identifier, n} | tail] ->
-        case tail do
-          # Check if the next token is an opening parenthesis
-          :lparen ->
-            {parameters, tail_} = parse_parameters(tail, [])
-            {{:function_call_operation, n, parameters}, tail_}
-
-          _ ->
-            {{:identifier_literal, n}, tail}
-        end
 
       [{:string, t} | tail] ->
         {{:string_literal, t}, tail}

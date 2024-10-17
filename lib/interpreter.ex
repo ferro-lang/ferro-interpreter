@@ -212,7 +212,6 @@ defmodule Interpreter do
         {{:return_value, val}, new_scope}
 
       _ ->
-        dbg(expression)
         raise "Interpreter internal error: Cannot execute expression!"
     end
   end

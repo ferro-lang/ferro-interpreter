@@ -168,7 +168,7 @@ defmodule Lexer do
       "%" ->
         helper(tail, [{:operation, operator_from_character(?%)} | tokens])
 
-      # Handing the minus case seperately, as (-ve) numbers also start with '-'
+      # Handing the minus case separately, as (-ve) numbers also start with '-'
       "-" ->
         extract_minus_or_number(tail, tokens)
 
