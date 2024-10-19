@@ -72,7 +72,7 @@ defmodule Parser do
         {{:return_operation, statement}, tail_}
 
       _ ->
-        {expression, tail} = parse_passable_expression(tokens, nil)
+        {expression, tail} = parse_passable_expression(tokens)
 
         case expression do
           {nil, tail} ->
@@ -85,17 +85,14 @@ defmodule Parser do
     end
   end
 
-  defp parse_passable_expression(tokens, parsing_type) do
+  defp parse_passable_expression(tokens) do
     case tokens do
       [{:identifier, name}, :lparen | tail] ->
         {parameters, tail_} = parse_parameters(tail, [])
         {{:function_call_operation, name, parameters}, tail_}
 
-      _ when parsing_type == :in_process ->
-        parse_expression(tokens)
-
       _ ->
-        {nil, tokens}
+        parse_expression(tokens)
     end
   end
 
@@ -103,7 +100,7 @@ defmodule Parser do
   defp parse_parameters([:rparen | tail], acc), do: {Enum.reverse(acc), tail}
 
   defp parse_parameters(tokens, acc) do
-    {expression, tail_} = parse_passable_expression(tokens, :in_process)
+    {expression, tail_} = parse_passable_expression(tokens)
 
     case tail_ do
       [:comma | tail__] ->
@@ -206,6 +203,9 @@ defmodule Parser do
 
       [{:string, t} | tail] ->
         {{:string_literal, t}, tail}
+
+      [{:identifier, t} | tail] ->
+        {{:identifier_literal, t}, tail}
 
       [:lparen | tail] ->
         {expression, tail_} = parse_expression(tail)

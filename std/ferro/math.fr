@@ -1,2 +1,9 @@
+fn add(a, b) {
+  return a + b
+}
+
 external("FerroMath.ex", "sqrt")
 fn sqrt(a) {}
+
+external("FerroMath.ex", "sqrt")
+fn sqrta(a) {}
