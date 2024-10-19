@@ -22,8 +22,10 @@ struct vec3(x: float, y: float, z: float)
 ### 3. Method Definition Inside Struct
 
 ```rust
-fn magnitude() := float {
-  return sqrt((self.x * self.x) + (self.y * self.y) + (self.z * self.z));
+struct vec3(x, y, z) {
+  fn magnitude() := float {
+    return sqrt((self.x * self.x) + (self.y * self.y) + (self.z * self.z));
+  }
 }
 ```
 
