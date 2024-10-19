@@ -4,8 +4,6 @@ defmodule FerroInterpreter do
     |> Lexer.lexer()
     |> Parser.parse()
     |> Interpreter.eval(Scope.make_global_scope())
-
-    nil
   end
 
   def file(filename) do

@@ -32,8 +32,8 @@ defmodule Interpreter do
         if Map.has_key?(returned_scope, "main") do
           case Map.get(returned_scope, "main") do
             {:function, [], block, fn_scope} ->
-              {_, _} = eval_block(block, scope, fn_scope, [])
-              nil
+              {val, _} = eval_block(block, returned_scope, fn_scope, [])
+              extract_value(val)
 
             _ ->
               raise "RuntimeError: 'main' must be a function, but is not!"
@@ -150,8 +150,11 @@ defmodule Interpreter do
                   end)
 
                 variables = Enum.zip(arguments, evaluated_params)
-                fn_scope = Enum.into(variables, make_local_scope(fn_scope))
-                {val, new_scope} = eval_block(block, scope, fn_scope, [])
+                local_scope = make_local_scope(fn_scope)
+                # Add the function itself to the local scope for recursion
+                local_scope = Map.put(local_scope, name, {:function, arguments, block, fn_scope})
+                local_scope = Enum.into(variables, local_scope)
+                {val, new_scope} = eval_block(block, scope, local_scope, [])
 
                 case val do
                   # Return actual value
@@ -168,16 +171,14 @@ defmodule Interpreter do
                 elixir_file_path = "std/ex/#{elixir_file}"
                 module_name = get_module_name(elixir_file_path)
 
-                if Code.ensure_loaded?(module_name) do
-                  module_name
-                else
+                # Check if the module exists and has the required function
+                if not Code.ensure_loaded?(Module.concat(Elixir, module_name)) do
                   case File.read(elixir_file_path) do
                     {:ok, content} ->
-                      [{m, _}] = Code.compile_string(content)
-                      m
+                      Code.compile_string(content)
 
                     {:error, reason} ->
-                      {:error, reason}
+                      raise "Interpreter Error: Failed to load external module: #{reason}"
                   end
                 end
 

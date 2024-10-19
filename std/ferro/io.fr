@@ -1,2 +1,41 @@
 external("FerroIO.ex", "println")
-fn println(arg) {} 
+fn println(arg) {}
+
+external("FerroIO.ex", "print")
+fn print(arg) {}
+
+external("FerroIO.ex", "read_line")
+fn read_line() {}
+
+external("FerroIO.ex", "read_char")
+fn read_char() {}
+
+external("FerroIO.ex", "flush")
+fn flush() {}
+
+external("FerroIO.ex", "clear_screen")
+fn clear_screen() {}
+
+external("FerroIO.ex", "write_file")
+fn write_file(filename, content) {}
+
+external("FerroIO.ex", "read_file")
+fn read_file(filename) {}
+
+external("FerroIO.ex", "append_file")
+fn append_file(filename, content) {}
+
+external("FerroIO.ex", "file_exists?")
+fn file_exists(filename) {}
+
+external("FerroIO.ex", "delete_file")
+fn delete_file(filename) {}
+
+external("FerroIO.ex", "create_directory")
+fn create_directory(path) {}
+
+external("FerroIO.ex", "list_directory")
+fn list_directory(path) {}
+
+external("FerroIO.ex", "eval_code")
+fn eval(value) {}

@@ -1,9 +1,14 @@
 open io
 open math
 
-fn main() {
-  println(add(2, 3))
-  println(sqrt(64))
-  println(sqrta(64))
+fn relp(msg) {
+  println(msg)
+  let line = read_line()
+  let out = eval(line)
+
+  relp(out)
 }
 
+fn main() { 
+  relp("Initialization RELP\n")
+}

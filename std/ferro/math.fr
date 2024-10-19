@@ -1,9 +1,65 @@
-fn add(a, b) {
-  return a + b
-}
-
 external("FerroMath.ex", "sqrt")
-fn sqrt(a) {}
+fn sqrt(x) {}
 
-external("FerroMath.ex", "sqrt")
-fn sqrta(a) {}
+external("FerroMath.ex", "pow")
+fn pow(base, exponent) {}
+
+external("FerroMath.ex", "log")
+fn log(x) {}
+
+external("FerroMath.ex", "exp")
+fn exp(x) {}
+
+external("FerroMath.ex", "sin")
+fn sin(x) {}
+
+external("FerroMath.ex", "cos")
+fn cos(x) {}
+
+external("FerroMath.ex", "tan")
+fn tan(x) {}
+
+external("FerroMath.ex", "asin")
+fn asin(x) {}
+
+external("FerroMath.ex", "acos")
+fn acos(x) {}
+
+external("FerroMath.ex", "atan")
+fn atan(x) {}
+
+external("FerroMath.ex", "atan2")
+fn atan2(y, x) {}
+
+external("FerroMath.ex", "sinh")
+fn sinh(x) {}
+
+external("FerroMath.ex", "cosh")
+fn cosh(x) {}
+
+external("FerroMath.ex", "tanh")
+fn tanh(x) {}
+
+external("FerroMath.ex", "asinh")
+fn asinh(x) {}
+
+external("FerroMath.ex", "acosh")
+fn acosh(x) {}
+
+external("FerroMath.ex", "atanh")
+fn atanh(x) {}
+
+external("FerroMath.ex", "erf")
+fn erf(x) {}
+
+external("FerroMath.ex", "erfc")
+fn erfc(x) {}
+
+external("FerroMath.ex", "log1p")
+fn log1p(x) {}
+
+external("FerroMath.ex", "erfinv")
+fn erfinv(x) {}
+
+external("FerroMath.ex", "hypot")
+fn hypot(x, y) {}
